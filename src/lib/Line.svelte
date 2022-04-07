@@ -1,0 +1,112 @@
+<script>
+	export let lines;
+	export let lineStyle;
+
+	import { createEventDispatcher } from 'svelte';
+	import C from "/src/js/cicero/grammar.js";
+	import unspecifiedLineGrammar from "./grammars/smalltalk/smalltalkLine.js";
+
+	const dispatch = createEventDispatcher();
+	const lineGrammar = C.specify(unspecifiedLineGrammar);
+
+	function nextChunks(sequences) {
+		return C.getFirstSymbols(sequences.map(l => l.sequence));
+	}
+
+	function next(sequences) {
+		return C.nextSequences(lineGrammar, sequences);
+	}
+
+	$: line = start(lines).line;
+	$: history = start(lines).history;
+	$: future = start(lines).future;
+	$: present = next(future)
+	$: lineSymbol = last(history) && next(last(history)).find(l => l.sequence[0] === last(line)).symbol;
+	$: isComplete = future.some(f => f.sequence.length === 0);
+
+	function start(lines) {
+		return {
+			line: [],
+			history: [],
+			future: lines.map(
+				l => ({symbol: l, sequence: [l]})
+			),
+		};
+	}
+
+	function nextChunk(selectedChunk) {
+		line = [...line, selectedChunk];
+		history = [...history, future];
+		future = C.selectSequences(present, selectedChunk);
+
+		console.log({ lineSymbol, history, future, present })
+	}
+
+	function last(array) {
+		return array[array.length - 1];
+	}
+
+	function undo() {
+		future = last(history)
+		line = line.slice(0,-1);
+		history = history.slice(0,-1);
+	}
+
+	function toString(line) {
+		const lineString = line.map(w => w.match(/[.,:?!;]/) ? w : " " + w).join("");
+		return lineString.slice(1);
+	}
+
+
+</script>
+
+
+<p class={lineStyle}>
+	{#if line.length > 0}
+		<span class="button line" on:click={undo}>
+			{toString(line)}
+		</span>
+	{/if}
+
+	{#if present.length > 0}	
+		{#each nextChunks(present) as chunk}
+			<span class="button chunk" on:click={() => nextChunk(chunk)}>{chunk}</span>
+		{/each}
+	{/if}
+
+	{#if isComplete}
+		<span class="button done" on:click={dispatch("done", {
+			lineSymbol: lineSymbol,
+			lineString: toString(line)
+		})}>OK</span>
+	{/if}
+</p>	
+
+
+<style lang="stylus">
+
+p.odd::before
+	content: " ▲ "
+	color: blue
+    
+p.even::before
+	content: " ● "
+	color: blue
+
+p 
+	font-size: 1.5rem
+	margin: 0
+	
+.button
+	margin: 0.4em 0.2em
+	padding: 0em 0.4em;
+	font-size: 1.5rem
+
+.line
+	border-left-color: white;
+	border-right-color: white;
+	border-top-color: white;
+	border-bottom-color: white;
+	border-radius: 0;
+	
+</style>
