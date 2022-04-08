@@ -4,7 +4,7 @@
 
 <div class="history">
     {#each lines as line}
-        <p><span class="button">{line}</span></p>
+        <p><span>{line}</span></p>
     {/each}
 </div>
 
@@ -22,13 +22,5 @@
     p
         font-size: 1.5rem
         margin: 0
-    
-.button
-    margin: 0.4em 0.2em
-    padding: 0em 0.4em
-    font-size: 1.5rem
-
-    border-color: white;
-    border-radius: 0;
-
+        
 </style>

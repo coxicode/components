@@ -37,14 +37,14 @@
 
 <div class="container dialog">
 
-  <h2>Dialog</h2>
-
   <List lines={history} />
 
   {#if future.length > 0} 
     <Line lines={nextLines} lineStyle={history.length % 2 === 0 ? "odd" : "even"} on:done={(event) => updateDialog(event.detail.lineSymbol, event.detail.lineString)} />
   {:else}
-    <button class="start outline" on:click={() => {history = start().history; future = start().future;}}> Nochmal</button>
+    <div class="dialog-footer">
+      <button class="start outline" on:click={() => {history = start().history; future = start().future;}}> Nochmal</button>
+    </div>
   {/if}
 
 </div>
@@ -52,6 +52,7 @@
 
 <style lang="stylus">
 
+/*
 .dialog
   background-color: white
   padding: 2em
@@ -87,4 +88,5 @@ p
   border-bottom-color: white;
   border-radius: 0;
 
+*/
 </style>

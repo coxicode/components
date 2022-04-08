@@ -63,14 +63,14 @@
 
 <p class={lineStyle}>
 	{#if line.length > 0}
-		<span class="button line" on:click={undo}>
+		<span class="line" on:click={undo}>
 			{toString(line)}
 		</span>
 	{/if}
 
 	{#if present.length > 0}	
 		{#each nextChunks(present) as chunk}
-			<span class="button chunk" on:click={() => nextChunk(chunk)}>{chunk}</span>
+			<span class="chunk" on:click={() => nextChunk(chunk)}>{chunk}</span>
 		{/each}
 	{/if}
 
@@ -81,32 +81,3 @@
 		})}>OK</span>
 	{/if}
 </p>	
-
-
-<style lang="stylus">
-
-p.odd::before
-	content: " ▲ "
-	color: blue
-    
-p.even::before
-	content: " ● "
-	color: blue
-
-p 
-	font-size: 1.5rem
-	margin: 0
-	
-.button
-	margin: 0.4em 0.2em
-	padding: 0em 0.4em;
-	font-size: 1.5rem
-
-.line
-	border-left-color: white;
-	border-right-color: white;
-	border-top-color: white;
-	border-bottom-color: white;
-	border-radius: 0;
-	
-</style>
