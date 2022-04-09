@@ -61,23 +61,23 @@
 </script>
 
 
-<p class={lineStyle}>
+<div class={lineStyle}>
 	{#if line.length > 0}
-		<span class="line" on:click={undo}>
+		<div class="line" on:click={undo}>
 			{toString(line)}
-		</span>
+		</div>
 	{/if}
 
 	{#if present.length > 0}	
 		{#each nextChunks(present) as chunk}
-			<span class="chunk" on:click={() => nextChunk(chunk)}>{chunk}</span>
+			<div class="chunk" on:click={() => nextChunk(chunk)}>{chunk}</div>
 		{/each}
 	{/if}
 
 	{#if isComplete}
-		<span class="button done" on:click={dispatch("done", {
+		<div class="button done" on:click={dispatch("done", {
 			lineSymbol: lineSymbol,
 			lineString: toString(line)
-		})}>OK</span>
+		})}>OK</div>
 	{/if}
-</p>	
+</div>	

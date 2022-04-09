@@ -43,7 +43,7 @@
     <Line lines={nextLines} lineStyle={history.length % 2 === 0 ? "odd" : "even"} on:done={(event) => updateDialog(event.detail.lineSymbol, event.detail.lineString)} />
   {:else}
     <div class="dialog-footer">
-      <button class="start outline" on:click={() => {history = start().history; future = start().future;}}> Nochmal</button>
+      <button on:click={() => {history = start().history; future = start().future;}}> Nochmal</button>
     </div>
   {/if}
 

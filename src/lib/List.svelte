@@ -4,7 +4,7 @@
 
 <div class="history">
     {#each lines as line}
-        <p><span>{line}</span></p>
+        <p>{line}</p>
     {/each}
 </div>
 
