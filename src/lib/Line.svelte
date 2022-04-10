@@ -1,20 +1,19 @@
 <script>
 	export let lines;
 	export let lineStyle;
+	export let grammar;
 
 	import { createEventDispatcher } from 'svelte';
 	import C from "/src/js/cicero/grammar.js";
-	import unspecifiedLineGrammar from "./grammars/smalltalk/smalltalkLine.js";
 
 	const dispatch = createEventDispatcher();
-	const lineGrammar = C.specify(unspecifiedLineGrammar);
 
 	function nextChunks(sequences) {
 		return C.getFirstSymbols(sequences.map(l => l.sequence));
 	}
 
 	function next(sequences) {
-		return C.nextSequences(lineGrammar, sequences);
+		return C.nextSequences(grammar, sequences);
 	}
 
 	$: line = start(lines).line;
@@ -81,3 +80,22 @@
 		})}>OK</div>
 	{/if}
 </div>	
+
+<style lang="stylus">
+
+.line, .chunk, .button
+    font-size: 1.5rem
+    margin: 0.3em 0.6em
+    padding: 0.1em 0.3em
+    width: fit-content
+    display: inline-block
+    border-radius: 0.2em
+    
+.chunk, .button
+    border: 1px solid gray
+    cursor: pointer
+    
+.done
+	border-color: blue
+        
+</style>
