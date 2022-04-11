@@ -10,6 +10,7 @@
 
 <style lang="stylus">
 
+/*
 .history
     p:nth-child(odd)::before
         content: " ▲ "
@@ -22,5 +23,5 @@
     p
         font-size: 1.5rem
         margin: 0
-        
+*/
 </style>

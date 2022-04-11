@@ -3,8 +3,12 @@
 	export let lineStyle;
 	export let grammar;
 
+	import { tick } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import C from "/src/js/cicero/grammar.js";
+
+	const punctuation = [",", ".", ":", ";", "?", "!"]
 
 	const dispatch = createEventDispatcher();
 
@@ -33,12 +37,19 @@
 		};
 	}
 
-	function nextChunk(selectedChunk) {
+	async function nextChunk(selectedChunk) {
 		line = [...line, selectedChunk];
 		history = [...history, future];
 		future = C.selectSequences(present, selectedChunk);
 
-		console.log({ lineSymbol, history, future, present })
+		const followingChunks = nextChunks(future);
+
+		if (followingChunks.length === 1 && punctuation.includes(followingChunks[0])) {
+			// Need to wait for reactive variables to change (line, history, future). Then it is safe to recursively call nextChunk again
+			await tick(); 
+			nextChunk(followingChunks[0]);
+		}
+
 	}
 
 	function last(array) {
@@ -52,15 +63,18 @@
 	}
 
 	function toString(line) {
-		const lineString = line.map(w => w.match(/[.,:?!;]/) ? w : " " + w).join("");
+		const lineString = line.map(w => punctuation.includes(w) ? w : " " + w).join("");
 		return lineString.slice(1);
 	}
 
+	function hideOK() {
+		document.getElementById("done").style.display = "none";
+	}
 
 </script>
 
 
-<div class={lineStyle}>
+<div in:fade={{ delay: 800 }} class={lineStyle}>
 	{#if line.length > 0}
 		<div class="line" on:click={undo}>
 			{toString(line)}
@@ -74,15 +88,17 @@
 	{/if}
 
 	{#if isComplete}
-		<div class="button done" on:click={dispatch("done", {
+		<div id="done" class="button done" on:click={() => { hideOK(); dispatch("done", {
 			lineSymbol: lineSymbol,
 			lineString: toString(line)
-		})}>OK</div>
+		})}}>OK</div>
 	{/if}
 </div>	
 
 <style lang="stylus">
 
+
+/*
 .line, .chunk, .button
     font-size: 1.5rem
     margin: 0.3em 0.6em
@@ -97,5 +113,6 @@
     
 .done
 	border-color: blue
-        
+*/
+
 </style>

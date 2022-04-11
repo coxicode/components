@@ -94,6 +94,31 @@ function expandLeft(grammar, sequence) {
 	}
 }
 
+// Expand sequence of symbols step by step randomly choosing one possible next terminal
+// until the end of the sequence is reached.
+// Return a single sequence, i.e. a list of terminals
+function expandRandom(grammar, sequence) {
+
+	function selectRandom(list) {
+		const randomIndex = Math.floor(Math.random() * list.length);
+	  	return list[randomIndex];
+	}
+
+	const possibleExpansions = expandLeft(grammar, sequence);
+
+	if (possibleExpansions.length === 0) {
+		return [];
+	} else {
+		const selectedExpansion = selectRandom(possibleExpansions);
+		const firstTerminal = selectedExpansion[0];
+		const followingTerminals = expandRandom(grammar, selectedExpansion.slice(1));
+
+		console.log({possibleExpansions, selectedExpansion, firstTerminal, followingTerminals })
+
+		return prepend(firstTerminal, followingTerminals);
+	}
+}
+
 
 function removeFirstSymbol(sequence) {
 	return sequence.slice(1);		
@@ -227,6 +252,7 @@ export default {
 	matchSymbol,
 	expandSymbol,
 	expandLeft,
+	expandRandom,
 	nextSequences,
 	selectSequences,
 	getFirstSymbols,
