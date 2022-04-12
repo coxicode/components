@@ -3,7 +3,7 @@
 	export let lineStyle;
 	export let grammar;
 
-	import { beforeUpdate, onMount } from 'svelte';
+	import { afterUpdate, onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import C from "/src/js/cicero/grammar.js";
@@ -24,16 +24,19 @@
 	const lineSymbol = selectRandom(lines);
 	const line = C.expandRandom(grammar, [lineSymbol])
 
-	onMount(() => dispatch("done", {
+
+	onMount(() => {
+		document.getElementsByClassName("line")[0].scrollIntoView({block: "center"})
+		dispatch("done", {
 			lineSymbol: lineSymbol,
 			lineString: toString(line)
 		})
-	);
+	});
 
 </script>
 
 
-<div in:fade={{ }}  class={lineStyle}>
+<div in:fade={{ delay: 800 }}  class={lineStyle}>
 	<div class="line">
 		{toString(line)}
 	</div>

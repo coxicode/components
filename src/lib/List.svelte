@@ -3,8 +3,8 @@
 </script>
 
 <div class="history">
-    {#each lines as line}
-        <p>{line}</p>
+    {#each lines as line, i}
+        <p class="history-line {i % 2 === 0 ? 'odd' : 'even'}">{line}</p>
     {/each}
 </div>
 
