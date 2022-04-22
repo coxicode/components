@@ -2,6 +2,7 @@
   import List from "./List.svelte";
   import RandomLine from "./RandomLine.svelte";
   import InteractiveLine from "./InteractiveLine.svelte";
+  import { fade } from 'svelte/transition';
 
   import C from "/src/js/cicero/grammar.js";
 
@@ -15,14 +16,17 @@
     return C.nextSequences(grammarD, sequences);
   }
 
-  let {history, future} = start();
+  let history = [];
+  let future = [];
 
   $: nextLines = C.getFirstSymbols(future.map(l => l.sequence));
   $: lineMode = history.length % 2 === 0 ? "random" : "interactive"
 
-  console.log(nextLines)
+  //console.log({dialogGrammar, lineGrammar})
 
   function start() {
+    //console.log({grammarD, grammarL})
+
     return {
       history: [],
       future: next([{sequence: ["$Start"]}])
@@ -31,17 +35,19 @@
 
 
   function updateDialog(line, lineString) {
-    setTimeout(() => {
       history = [...history, lineString];
       // Select all possible continuation that begin with the selected line
       future = next(C.selectSequences(future, line));       
-    }, 0);
   }
 
 
 </script>
 
 <div class="container dialog">
+
+  <div class="dialog-header">
+    <button class="button-start" on:click={() => {history = start().history; future = start().future;}}>Start</button>
+  </div>
 
   <List lines={history} />
 
@@ -51,9 +57,11 @@
     {:else}
       <RandomLine grammar={grammarL} lines={nextLines} lineStyle={history.length % 2 === 0 ? "odd" : "even"} on:done={(event) => updateDialog(event.detail.lineSymbol, event.detail.lineString)} />
     {/if}
-  {:else}
-    <div class="dialog-footer">
-      <button on:click={() => {history = start().history; future = start().future;}}> Nochmal</button>
+  {/if}
+
+  {#if future.length === 0 && history.length > 0}
+    <div in:fade="{{ delay: 800, duration: 100 }}" class="dialog-footer">
+      <button class="button-restart" on:click={() => {history = start().history; future = start().future;}}>↻ Noch einmal</button>
     </div>
   {/if}
 

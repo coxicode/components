@@ -61,7 +61,7 @@ function specifyFeature(sequence, attribute, value) {
 // Generate a list of possible sequences setting features to all possible values
 // The values of unspecified features are set in the given feature structure. They need to agree.
 // So they are set to the same value in each generated sequence.
-// To create all possiblities defined by the grammar, go ahead and create a features structure
+// To create all possiblities defined by the grammar, go ahead and create a feature structure
 // that contains all possible values and pass it to specify. That way this function does not
 // depend on the grammar which is nice.
 function specify(sequence, featureStructure) {

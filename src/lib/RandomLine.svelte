@@ -3,12 +3,15 @@
 	export let lineStyle;
 	export let grammar;
 
+	import { adjust } from 'ramda'
 	import { afterUpdate, onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
-	import { fade } from 'svelte/transition';
+	import { fade, slide, fly } from 'svelte/transition';
 	import C from "/src/js/cicero/grammar.js";
-
+	
 	const punctuation = [",", ".", ":", ";", "?", "!"]
+	const finalPunctuation = [".", "?", "!"];
+
 	const dispatch = createEventDispatcher();
 
 	function selectRandom(list) {
@@ -16,9 +19,36 @@
 	  	return list[randomIndex];
 	}
 
+	function toList(line) {
+		return line.reduce(
+			(acc, w) => {
+				if (acc.length > 0 && punctuation.includes(w)) {
+					return adjust(acc.length - 1, (a) => a.concat(w), acc);
+				} else {
+					const previousCharacter = acc.length === 0 ? [] : acc[acc.length -1].slice(-1);
+					return acc.concat(capitalizeNext(previousCharacter, w));
+				}
+			},
+		[]);
+	}
+
 	function toString(line) {
-		const lineString = line.map(w => punctuation.includes(w) ? w : " " + w).join("");
-		return lineString.slice(1);
+		return toList(line).join(" ");
+	}
+
+	function capitalize(string) {
+		return string.charAt(0).toUpperCase() + string.slice(1);
+	}
+
+	function capitalizeNext(line, chunk) {
+		const afterSentence = finalPunctuation.includes(line[line.length - 1]);
+		const firstChunk = (line.length === 0);
+
+		if (firstChunk || afterSentence) {
+			return capitalize(chunk);
+		} else {
+			return chunk;
+		}
 	}
 
 	const lineSymbol = selectRandom(lines);
@@ -26,7 +56,6 @@
 
 
 	onMount(() => {
-		document.getElementsByClassName("line")[0].scrollIntoView({block: "center"})
 		dispatch("done", {
 			lineSymbol: lineSymbol,
 			lineString: toString(line)
@@ -36,7 +65,7 @@
 </script>
 
 
-<div in:fade={{ delay: 800 }}  class={lineStyle}>
+<div in:fade="{{ duration: 100 }}"  class={lineStyle}>
 	<div class="line">
 		{toString(line)}
 	</div>

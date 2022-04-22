@@ -79,7 +79,7 @@ function expandLeft(grammar, sequence) {
 		return lift(concat)(firstSequences, [restOfSequence]);
 	}
 
-	//console.log({ sequence });
+	//console.log(sequence.join(" + "));
 
 	if (!sequence || sequence.length === 0) {
 		return [];
@@ -113,7 +113,7 @@ function expandRandom(grammar, sequence) {
 		const firstTerminal = selectedExpansion[0];
 		const followingTerminals = expandRandom(grammar, selectedExpansion.slice(1));
 
-		console.log({possibleExpansions, selectedExpansion, firstTerminal, followingTerminals })
+		//console.log({selectedTerminal: firstTerminal, selectedSequence: selectedExpansion, allSequences: possibleExpansions })
 
 		return prepend(firstTerminal, followingTerminals);
 	}
