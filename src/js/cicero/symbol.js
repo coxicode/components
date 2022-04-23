@@ -9,7 +9,8 @@
  * Variables always start with "$", but on the lefthand side of grammar rules it is omitted.
  */
 
-import { fromPairs, toPairs, equals, uniq, concat, keys, intersection, union, lift, append } from 'ramda';
+import { fromPairs, toPairs, equals, uniq, concat, keys, intersection, union, append } from 'rambda';
+import { lift } from 'ramda';
 import fs from './featureStructure.js';
 
 function isVariable(symbol, prefix) {
@@ -26,7 +27,11 @@ function isInGrammar(grammar, symbol) {
 }
 
 function name(symbol, prefix) {
-    return symbol.split("{")[0].replace(prefix, "");
+
+    const startIndex = symbol[0] === prefix ? 1 : 0;
+    const curlyIndex = symbol.indexOf("{");
+    return curlyIndex > -1 ? symbol.substring(startIndex, curlyIndex) : symbol.substring(startIndex);
+
 }
 
 function setFeatureStructure(symbol, featureStructure) {

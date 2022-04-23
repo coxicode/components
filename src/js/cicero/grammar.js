@@ -1,4 +1,5 @@
-import { mergeRight, includes, lift, unnest, concat, toPairs, fromPairs, prepend, assoc, append, pick } from 'ramda';
+import { includes, concat, fromPairs, prepend, assoc, append, pick } from 'rambda';
+import { lift, unnest, mergeRight, toPairs } from 'ramda';
 import sym from './symbol.js';
 import fs from './featureStructure.js';
 import seq from './sequence.js';
@@ -22,7 +23,7 @@ function symbols(grammar) {
 }
 
 
-// Look up variable in the grammar and generate all possible variants with categories fill with available values
+// Look up variable in the grammar and generate all possible variants with categories filled with available values
 function matchSymbol(grammar, symbol) {
 
 	//console.log({ symbol });
@@ -31,15 +32,25 @@ function matchSymbol(grammar, symbol) {
 
 	const symbolFS = fs.fromString(symbol);
 
-	const matchedSymbols = symbols(grammar).filter(grammarSymbol => {
+	const matchedSymbols = symbols(grammar).reduce((matched, grammarSymbol) => {
+		//console.log({matched})
 		const haveSameName = (sym.name(grammarSymbol, grammar.prefix) === sym.name(symbol, grammar.prefix));
-		const grammarFS = fs.fromString(grammarSymbol);
-		const areUnifiable = fs.areUnifiable(symbolFS, grammarFS);
+		if (!haveSameName) {
+			return matched;
+		} else {
+			const grammarFS = grammar.featureStructures ? grammar.featureStructures[grammarSymbol] : fs.fromString(grammarSymbol);
+			const areUnifiable = fs.areUnifiable(symbolFS, grammarFS);
+			if (areUnifiable) {
+				return [...matched, `${grammar.prefix}${grammarSymbol}`];
+			} else {
+				return matched;
+			}
+		}
+	}, []);
 
-		return haveSameName && areUnifiable;
-	});
+	//console.log({ matchedSymbols })
 
-	return matchedSymbols.map(v => grammar.prefix + v);
+	return matchedSymbols;
 
 }
 
@@ -55,7 +66,13 @@ function expandSymbol(grammar, symbol, featureStructure) {
 
 	const strings = grammar.rules[symbol.slice(1)] || [];
 	const sequences = strings.map(s => seq.fromString(s, grammar.separator));
-	return unnest(lift(seq.specify)(sequences, [featureStructure]));
+	const specifiedSequences = unnest(lift(seq.specify)(sequences, [featureStructure]));
+
+	if (symbol === "$Discussion{topic:mood,type,discussion_type:#1}") {
+		//console.log({ strings, sequences, specifiedSequences })
+	}
+
+	return specifiedSequences;
 
 }
 
@@ -63,6 +80,8 @@ function expandSymbol(grammar, symbol, featureStructure) {
 // Expand a list of symbols until the first symbol is a terminal
 // Returns a list of sequences
 function expandLeft(grammar, sequence) {
+
+	//console.log({sequence})
 
 	function specify(sequence) {
 		return seq.specify(sequence, grammar.features);
@@ -74,8 +93,7 @@ function expandLeft(grammar, sequence) {
 		const firstFS = fs.fromString(firstSymbol);
 		const matchedSymbols = matchSymbol(grammar, firstSymbol);
 		const firstSequences = unnest(lift(expandSymbol)([grammar], matchedSymbols, [firstFS]));
-		//console.log({ firstSequences })
-		//console.log({ restOfSequence })
+		//console.log({ firstSequences, restOfSequence })
 		return lift(concat)(firstSequences, [restOfSequence]);
 	}
 
@@ -149,7 +167,11 @@ function selectSequences(sequencesWithSymbol, firstTerminal) {
 
 
 function isPossible(grammar, symbol) {
+	const symbols = ["$Begin", "$Discussion{topic:name}", "$Discussion{topic:mood}", "$End"]
 
+	if (symbols.includes(symbol)) {
+		//console.log({symbol})
+	}
 
 	if (sym.isTerminal(symbol, grammar.prefix)) return true;
 
@@ -159,9 +181,9 @@ function isPossible(grammar, symbol) {
 
 	const matchedSymbolSequences = matchedSymbols.map(s => [symbol, expandSymbol(grammar, s)]);
 
-	//console.log("--- isPossible ---")
-	//console.log({ symbol, matchedSymbols, matchedSymbolSequences })
-
+	if (symbols.includes(symbol)) {
+		//console.log({matchedSymbols, matchedSymbolSequences})
+	}
 	return 0 < unnest(matchedSymbolSequences.filter(
 		s => s && (s[1] && (s[1].length > 0))
 	).map(s => specifyRule(grammar, s))).length;
@@ -170,7 +192,7 @@ function isPossible(grammar, symbol) {
 
 
 
-// Returns an object with specified symbols as keys and there associated sequences as values.
+// Returns an object with specified symbols as keys and their associated sequences as values.
 function specifyRule(grammar, [symbol, sequences]) {
 	function isTerminal(sequence) {
 		return sequence.length === 1 && sym.isTerminal(sequence[0], grammar.prefix);
@@ -178,9 +200,13 @@ function specifyRule(grammar, [symbol, sequences]) {
 
 	function specifySequence(sequence) {
 		const symbolSequence = prepend(symbol, sequence);
-		const unspecifiedAttributes = seq.unspecifiedAttributes(symbolSequence);
+		const unspecified = seq.unspecifiedAttributes(symbolSequence);
+		const variable = seq.variableAttributes(symbolSequence);
+		const specifiable = unspecified.concat(variable);
 
-		const featureStructure = pick(unspecifiedAttributes, grammar.features);
+		//console.log({specifiable})
+
+		const featureStructure = pick(specifiable, grammar.features);
 
 		return seq.specify(symbolSequence, featureStructure);
 	}
@@ -209,19 +235,23 @@ function specifyRule(grammar, [symbol, sequences]) {
 		{}
 	);
 
-	////console.log( {
-	//	symbol,
-	//	sequences,
-	//	specifiedSymbolSequences,
-	//	possibleSymbolSequences,
-	//	filteredRules
-	//})
+	if (symbol === "$Start") {
+
+		/*console.log( {
+			symbol,
+			sequences,
+			specifiedSymbolSequences,
+			possibleSymbolSequences,
+			filteredRules
+		})*/
+	}
 
 	return toPairs(filteredRules);
 
 }
 
-
+// Need to call this to prune all rules that might lead into gardenpaths
+// Also feature variables will be instantiated, i.e. S{size:#1} will become S{size:big}, S{size:small}
 function specify(grammar) {
 	const rules = toPairs(grammar.rules);
 
@@ -241,10 +271,16 @@ function specify(grammar) {
 		{}
 	);
 
-	const specifiedGrammar = assoc("rules", specifiedRules, grammar);
+	const featureStructures = fromPairs(Object.keys(specifiedRules).map(symbol => [symbol, fs.fromString(symbol)]));
 
-	//console.log({ specifiedGrammar })
-	return specifiedGrammar;
+	const specifiedGrammar = assoc("rules", specifiedRules, grammar);
+	const finalGrammar = assoc("featureStructures", featureStructures, specifiedGrammar);
+
+	console.log("--- ORIGINAL GRAMMAR ---")
+	console.log(JSON.stringify(grammar, null, 2))
+	console.log("--- FINAL GRAMMAR ---")
+	console.log(JSON.stringify(finalGrammar, null, 2))
+	return finalGrammar;
 
 }
 

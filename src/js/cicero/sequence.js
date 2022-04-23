@@ -10,7 +10,8 @@
  * ["ich", "heiße", "Marie"]
  */
 
-import { objOf, toPairs, flatten, unnest, uniq, assoc, lift, append, fromPairs } from 'ramda';
+import { objOf, toPairs, flatten, uniq, assoc, append, fromPairs} from 'rambda';
+import { lift, unnest, intersection } from 'ramda';
 import sym from './symbol.js';
 import fs from './featureStructure.js';
 
@@ -45,17 +46,65 @@ function expand(sequence) {
 function specifyFeature(sequence, attribute, value) {
 
 	return sequence.map(symbol => {
-		const symbolFS = fs.fromString(symbol);
-		const isUnspecified = fs.unspecifiedAttributes(symbolFS).includes(attribute);
+		let symbolFS = fs.fromString(symbol); // Mutable for performance reasons
+		const isUnspecified = symbolFS[attribute] && symbolFS[attribute].length === 0;
 
 		if (isUnspecified) {
-			const newFS = assoc(attribute, [value], symbolFS);
-			return sym.setFeatureStructure(symbol, newFS);
+			//console.log({ symbolFS })
+			symbolFS[attribute] = [value];
+			//console.log({ symbolFS})
+			return sym.setFeatureStructure(symbol, symbolFS);
 		} else {
 			return symbol;
 		}
 	});	
 }
+
+
+// Return a single sequence with the given feature variable specified to the given value.
+// Feature variables always begin with a # followed by a number (so far only single digits, should be enough.
+// They are used to implement agreement between features that have different names, i.e:
+// $Question{ask:#1} $AnswerQuestion{answer:#1, ask:#2} $Answer{answer:#2}
+// This way features with the same name can have separate agreement classes:
+// $Question{ask:#1} $AnswerQuestion{answer:#1, ask:#2} $AnswerQuestion{answer:#2, ask:#3} $Answer{answer:#3}
+
+function specifyFeatureVariable(sequence, featureVariable, value) {
+	if (featureVariable[0] === "#") {
+		return sequence.map(symbol => symbol.replaceAll(featureVariable, value));	
+	} else {
+		return sequence;
+	}
+}
+
+// Return a list of all attributes that have a given value in a sequence.
+// Used to find out which attributes are involved in agreement using feature variables
+// I.e. S{name:#1} O{hello:#1} P{hello:#2}
+// For #1 it returns ["name", "hello"]
+// For #2 it returns ["hello"]
+function getAttributes(sequence, value) {
+
+	//console.log({sequence});
+
+	return uniq(sequence.reduce((attributes, symbol) => {
+		const symbolFS = fs.fromString(symbol);
+		const symbolAttributes = fs.attributes(symbolFS).filter(a => symbolFS[a].includes(value));
+
+		return attributes.concat(symbolAttributes);
+	}, []));	
+
+}
+
+
+function getFeatureVariables(sequence) {
+
+	return uniq(unnest(sequence.map(symbol => {
+		const symbolFS = fs.fromString(symbol);
+		const symbolValues = fs.values(symbolFS);
+		return symbolValues.filter(symbol => symbol[0] === "#");
+	})));	
+
+}
+
 
 
 // Generate a list of possible sequences setting features to all possible values
@@ -65,19 +114,52 @@ function specifyFeature(sequence, attribute, value) {
 // that contains all possible values and pass it to specify. That way this function does not
 // depend on the grammar which is nice.
 function specify(sequence, featureStructure) {
-	const features = toPairs(featureStructure);
+
+	// First bind feature variables to all possible values provided in the given feature structure.
+	// Then proceed as normal.
+
+	const features = featureStructure ? toPairs(featureStructure) : [];
+
+	const fVariables = getFeatureVariables(sequence);	// #1, #2, etc.
+
+	// This implementation assumes all corresponding attributes can take the same set of values
+	// So only the first attribute's potential values are checked. Actually determining the intersection
+	// of all respective possible values would be more robust. However, in most use cases this should be enough.
+	function possibleValues(featureVariable) {
+		if (!featureStructure) return [featureVariable]
+		const attributes = getAttributes(sequence, featureVariable);
+		const valuesList = featureStructure[attributes[0]];
+		return valuesList;
+	}
+
+	function setFeatureVariables(sequences, variable) {
+		const possibleVals = possibleValues(variable);
+		return uniq(unnest(sequences.map(seq => {
+			return possibleVals.map(
+				value => specifyFeatureVariable(seq, variable, value)
+			);
+		})));
+	}
+
+	const sequencesWithoutVariables = fVariables.reduce(
+		setFeatureVariables,
+		[sequence]
+	);
 
 	function setValues(sequences, { attribute, values }) {
 		return uniq(lift(specifyFeature)(sequences, [attribute], values));
 	}
 
-	return features.reduce(
+	// Only features with normal values (not containing feature variables)
+	const specifiedSequences = features.reduce(
 		(seqs, feature) => setValues(seqs, {
 				attribute: feature[0],
 				values: feature[1]
 		}),
-		[sequence]
+		sequencesWithoutVariables
 	);
+
+	return specifiedSequences;
 
 }
 
@@ -85,10 +167,16 @@ function isSpecified(sequence) {
 	return sequence.every(sym.isSpecified);
 }
 
+function variableAttributes(sequence) {
+	const attributeLists = sequence.map(s => fs.variableAttributes(sym.getFeatureStructure(s)));
+	return [...uniq(unnest(attributeLists))];
+}
+
 function unspecifiedAttributes(sequence) {
 	const attributeLists = sequence.map(s => fs.unspecifiedAttributes(sym.getFeatureStructure(s)));
 	return [...uniq(unnest(attributeLists))];
 }
+
 
 function unspecifiedFeatureStructure(sequence) {
 	return fromPairs(unspecifiedAttributes(sequence).map(a => [a, []]));	
@@ -98,9 +186,13 @@ function unspecifiedFeatureStructure(sequence) {
 export default {
 	fromString,
 	toString,
+	getAttributes,
+	getFeatureVariables,
 	specifyFeature,
+	specifyFeatureVariable,
 	specify,
 	isSpecified,
+	variableAttributes,
 	unspecifiedAttributes,
 	unspecifiedFeatureStructure
 }
