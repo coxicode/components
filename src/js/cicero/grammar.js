@@ -276,10 +276,10 @@ function specify(grammar) {
 	const specifiedGrammar = assoc("rules", specifiedRules, grammar);
 	const finalGrammar = assoc("featureStructures", featureStructures, specifiedGrammar);
 
-	console.log("--- ORIGINAL GRAMMAR ---")
-	console.log(JSON.stringify(grammar, null, 2))
-	console.log("--- FINAL GRAMMAR ---")
-	console.log(JSON.stringify(finalGrammar, null, 2))
+	//console.log("--- ORIGINAL GRAMMAR ---")
+	//console.log(JSON.stringify(grammar, null, 2))
+	//console.log("--- FINAL GRAMMAR ---")
+	//console.log(JSON.stringify(finalGrammar, null, 2))
 	return finalGrammar;
 
 }

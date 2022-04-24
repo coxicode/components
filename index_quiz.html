@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Svelte + Vite App</title>
+    <script type="module" src="/src/quiz.js"></script>
+    <script type="application/json" id="grammar-quiz">
+{"prefix":"$","separator":" - ","features":{"topic":["name","mood"],"type":["decision","how"],"question_type":["decision","how"],"discussion_type":["decision","how"],"gen":["f","m"],"first_gen":["f","m"],"second_gen":["f","m"],"question_gen":["f","m"],"accept":["t","f"],"question_accept":["t","f"]},"rules":{"Start":["$Begin - $Discussion{topic:name,first_gen:m,second_gen:f} - $Discussion{topic:mood} - $End"],"Discussion{topic:name,first_gen:m,second_gen:f}":["@Question{topic:name,type,accept,gen:m} - @AnswerQuestion{topic:name,type,accept,gen:m,question_gen:f,question_type:#1,question_accept:#2} - @Answer{topic:name,gen:f,type:#1,accept:#2}"],"Discussion{topic:mood}":["@Question{topic:mood,type,accept} - @AnswerQuestion{topic:mood,type,accept,question_type:#1,question_accept:#2} - @Answer{topic:mood,type:#1,accept:#2}"],"Begin":["@Greeting - @Greeting"],"End":["@Goodbye - @Goodbye"]}}
+    </script>
+  </head>
+
+  <body>
+    <div id="quiz"></div>
+  </body>
+</html>
