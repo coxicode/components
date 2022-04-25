@@ -1,5 +1,5 @@
 <script>
-  import { unnest } from 'ramda';
+  import { unnest, assoc } from 'ramda';
   import List from "./List.svelte";
   import Progress from "./quiz/Progress.svelte";
   import Question from "./quiz/Question.svelte";
@@ -11,10 +11,12 @@
   import C from "/src/js/cicero/grammar.js";
 
   export let quizGrammar;   // Grammar as string
-  export let testGrammar;   // Grammar as JSON
 
-  //const grammar = C.specify(JSON.parse(quizGrammar));
-  const grammar = testGrammar;
+  // Property "questions" are not really part of the grammar because they are just strings stored there.
+  // They get deleted during specification of grammar, so add them back in again.
+  // Maybe they should be stored in a separate variable altogether.
+  const parsedGrammar = JSON.parse(quizGrammar);
+  const grammar = assoc("questions", parsedGrammar.questions, C.specify(parsedGrammar));
 
   let phase = 0;
   let step = 0;
@@ -53,6 +55,11 @@
     phases[phase].steps[step] = result;
   }
 
+  function selectQuestion(selectedPhase, selectedStep) {
+    phase = selectedPhase;
+    step = selectedStep
+  }
+
   function nextQuestion() {
     step = (step + 1) % phases[phase].steps.length;
     phase = step === 0 ? (phase + 1) % phases.length : phase;
@@ -68,15 +75,14 @@
 
 </script>
 
-<div class="quiz">
+<div class="quiz-main">
 
-  <h2>Quiz</h2>
-
-  <Progress {phases} {phase} {step} />
-  <Question question = {grammar.questions[question.slice(1)]} />
+  <Progress {phases} {phase} {step} on:select={(event) => selectQuestion(event.detail.phase, event.detail.step)}/>
+  <div class="quiz-controls">
+    <Question question = {grammar.questions[question.slice(1)]} />
+    <span class="button continue" on:click={() => nextQuestion(false)}>Nächste Frage</span>
+  </div>
   <Answer {grammar} {possibleAnswers} correctAnswers={[answer]} on:done={(event) => endQuestion(event.detail.result)}/>
-
-  <button class="button-start" on:click={() => endQuestion(true)}>Next</button>
 
 </div>
 
