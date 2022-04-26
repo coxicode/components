@@ -106,7 +106,7 @@
 
 <div class="quiz-answer">
 	
-	<p in:fade="{{ delay: 800, duration: 100 }}" class="line answer-line">
+	<p class="line answer-line">
 		{#if line.length === 0 && present.length === 0}
 			<span class="line">Klich mich -></span>
 		{/if}
@@ -125,7 +125,7 @@
 
 		{#if isComplete}
 			<span id="done" class="button done" on:click={() => { hideOK(); dispatch("done", {
-				result: correctAnswers.includes(lineSymbol)
+				result: correctAnswers.includes(lineSymbol) ? "correct" : "incorrect"
 			})}}>⮞</span>
 		{/if}
 	</p>	

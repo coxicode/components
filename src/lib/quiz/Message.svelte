@@ -1,10 +1,10 @@
 <script>
-    export let question = "Dies ist die Frage";
+    export let text = "Dies ist die Frage";
 </script>
 
 
-<div class="quiz-question">
-    <p>{question}</p>
+<div class="quiz-message">
+    <p>{text}</p>
 </div>
 
 

@@ -1,9 +1,11 @@
 <script>
+  import { tick } from 'svelte';
   import { unnest, assoc } from 'ramda';
   import List from "./List.svelte";
   import Progress from "./quiz/Progress.svelte";
-  import Question from "./quiz/Question.svelte";
   import Answer from "./quiz/Answer.svelte";
+  import Message from "./quiz/Message.svelte";
+  import Done from "./quiz/Done.svelte";
   import RandomLine from "./RandomLine.svelte";
   import InteractiveLine from "./InteractiveLine.svelte";
   import { fade } from 'svelte/transition';
@@ -16,40 +18,53 @@
   // They get deleted during specification of grammar, so add them back in again.
   // Maybe they should be stored in a separate variable altogether.
   const parsedGrammar = JSON.parse(quizGrammar);
-  const grammar = assoc("questions", parsedGrammar.questions, C.specify(parsedGrammar));
+  const questions = parsedGrammar.questions
+  const phaseNames = parsedGrammar.phases;
+
+  const maxSteps = questions.reduce((maxSteps, phaseQuestions) => {
+      return phaseQuestions.length > maxSteps ? phaseQuestions.length : maxSteps;
+  }, 0);
+
+  parsedGrammar.rules = parsedGrammar.answers; //Just rename because "rules" is expected but "answers" is nicer
+  parsedGrammar.features = {
+    phase: questions.map((_,qIndex) => toString(qIndex)),
+    step: Array(maxSteps).map((_,sIndex) => toString(sIndex))
+  }
+
+  const grammar = C.specify(parsedGrammar);
 
   let phase = 0;
   let step = 0;
-  let { phases } = start()
+  let phases = [];
+  let showCurrent = true;
+
+  const totalQuestions = questions.reduce((sum, phaseQuestions) => sum + phaseQuestions.length, 0);
 
   function start() {
-    return {
-      phases: [
-        {
-            name: "Anfang", steps: [false, false, false]
-        },
-        {
-            name: "Ende 1", steps: [false, false, false]
-        },
-        {
-            name: "Ende 2", steps: [false, false, false]
-        }
-      ]
-    };
+    phase = 0;
+    step = 0;
+
+    phases = phaseNames.map((phaseName, phaseIndex) => ({
+        name: phaseName,
+        steps: questions[phaseIndex].map(q => false)
+    }));
+
+    showCurrent = true;
   }
 
   function features(phase, step) {
     return `{phase:${phase},step:${step}}`;
   }
 
-  const questions = unnest(phases.map((phase, p) => phase.steps.map(
-    (_, s) => `$Question${features(p,s)}`
-  )));
-
   $: possibleAnswers = phases[phase].steps.map((_,s) => `$Answer${features(phase,s)}`);
 
-  $: question = `$Question${features(phase,step)}`;
+  $: question = questions[phase][step];
   $: answer = `$Answer${features(phase,step)}`;
+  $: allCorrect = phases.every(p => p.steps.every(s => s === "correct"));
+  $: allDone = phases.every(p => p.steps.every(s => s === "correct" || s === "incorrect"));
+  $: isLastQuestion = (phase === phases.length - 1) && (step === phases[phase].steps.length - 1);
+  $: correctQuestions = phases.reduce((sum, phase) => sum + phase.steps.filter(s => s === "correct").length, 0);
+
 
   function saveResult(result) {
     phases[phase].steps[step] = result;
@@ -57,7 +72,8 @@
 
   function selectQuestion(selectedPhase, selectedStep) {
     phase = selectedPhase;
-    step = selectedStep
+    step = selectedStep;
+    showCurrent = true;
   }
 
   function nextQuestion() {
@@ -65,25 +81,38 @@
     phase = step === 0 ? (phase + 1) % phases.length : phase;
   }
 
-  function endQuestion(result) {
-      saveResult(result);
-      nextQuestion();
+  function unselectQuestion() {
+    showCurrent = false;
   }
 
-  console.log({phase, step, question, answer, questions, possibleAnswers})
+  async function endQuestion(result) {
+      saveResult(result);
 
+      await tick(); 
+
+      if (isLastQuestion || allCorrect) {
+        unselectQuestion();
+      } else{
+        nextQuestion();
+      }        
+  }
+
+
+  start();
 
 </script>
 
 <div class="quiz-main">
 
-  <Progress {phases} {phase} {step} on:select={(event) => selectQuestion(event.detail.phase, event.detail.step)}/>
-  <div class="quiz-controls">
-    <Question question = {grammar.questions[question.slice(1)]} />
-    <span class="button continue" on:click={() => nextQuestion(false)}>Nächste Frage</span>
-  </div>
-  <Answer {grammar} {possibleAnswers} correctAnswers={[answer]} on:done={(event) => endQuestion(event.detail.result)}/>
-
+  <Progress {showCurrent} {phases} {phase} {step} on:select={(event) => selectQuestion(event.detail.phase, event.detail.step)}/>
+    {#if allDone && !showCurrent}
+      <Done total={totalQuestions} correct={correctQuestions} on:start={() => start()}/>
+    {:else}
+      <div class="quiz-controls">
+        <Message text = {question} />
+      </div>
+      <Answer {grammar} {possibleAnswers} correctAnswers={[answer]} on:done={(event) => endQuestion(event.detail.result)}/>
+    {/if}
 </div>
 
 

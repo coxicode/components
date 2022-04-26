@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run copy-js",
     "preview": "vite preview",
-    "test": "./node_modules/mocha/bin/mocha --recursive './src/js/**/*.test.js'"
+    "test": "./node_modules/mocha/bin/mocha --recursive './src/js/**/*.test.js'",
+    "copy-js": "cp ./dist/assets/*.js ../website/src/assets/js/"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^1.0.0-next.30",
