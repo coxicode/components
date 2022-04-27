@@ -6,6 +6,7 @@
   import Answer from "./quiz/Answer.svelte";
   import Message from "./quiz/Message.svelte";
   import Done from "./quiz/Done.svelte";
+  import Club from "./quiz/Club.svelte";
   import RandomLine from "./RandomLine.svelte";
   import InteractiveLine from "./InteractiveLine.svelte";
   import { fade } from 'svelte/transition';
@@ -26,10 +27,9 @@
   }, 0);
 
   parsedGrammar.rules = parsedGrammar.answers; //Just rename because "rules" is expected but "answers" is nicer
-  parsedGrammar.features = {
-    phase: questions.map((_,qIndex) => toString(qIndex)),
-    step: Array(maxSteps).map((_,sIndex) => toString(sIndex))
-  }
+  parsedGrammar.features = parsedGrammar.features || {};
+  parsedGrammar.features.phase = questions.map((_,qIndex) => toString(qIndex));
+  parsedGrammar.features.step = Array(maxSteps).map((_,sIndex) => toString(sIndex));
 
   const grammar = C.specify(parsedGrammar);
 
@@ -37,8 +37,11 @@
   let step = 0;
   let phases = [];
   let showCurrent = true;
+  let premiumPhases = [2];
 
   const totalQuestions = questions.reduce((sum, phaseQuestions) => sum + phaseQuestions.length, 0);
+
+  $: isRestricted = premiumPhases.includes(phase) && !(window.localStorage.getItem("isLoggedIn") === "true");
 
   function start() {
     phase = 0;
@@ -105,7 +108,9 @@
 <div class="quiz-main">
 
   <Progress {showCurrent} {phases} {phase} {step} on:select={(event) => selectQuestion(event.detail.phase, event.detail.step)}/>
-    {#if allDone && !showCurrent}
+    {#if isRestricted}
+      <Club />
+    {:else if allDone && !showCurrent}
       <Done total={totalQuestions} correct={correctQuestions} on:start={() => start()}/>
     {:else}
       <div class="quiz-controls">
