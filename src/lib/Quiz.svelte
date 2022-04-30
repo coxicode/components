@@ -30,6 +30,7 @@
   parsedGrammar.features = parsedGrammar.features || {};
   parsedGrammar.features.phase = questions.map((_,qIndex) => toString(qIndex));
   parsedGrammar.features.step = Array(maxSteps).map((_,sIndex) => toString(sIndex));
+  parsedGrammar.features.eval = ["true", "false"];
 
   const grammar = C.specify(parsedGrammar);
 
@@ -55,14 +56,10 @@
     showCurrent = true;
   }
 
-  function features(phase, step) {
-    return `{phase:${phase},step:${step}}`;
-  }
-
-  $: possibleAnswers = phases[phase].steps.map((_,s) => `$Answer${features(phase,s)}`);
+  $: possibleAnswers = [`$Answer{phase:${phase},step:${step},eval:true}`, `$Answer{phase:${phase},step:${step},eval:false}`];
 
   $: question = questions[phase][step];
-  $: answer = `$Answer${features(phase,step)}`;
+  $: answer = `$Answer{phase:${phase},step:${step},eval:true}`;
   $: allCorrect = phases.every(p => p.steps.every(s => s === "correct"));
   $: allDone = phases.every(p => p.steps.every(s => s === "correct" || s === "incorrect"));
   $: isLastQuestion = (phase === phases.length - 1) && (step === phases[phase].steps.length - 1);

@@ -14,8 +14,14 @@
 
 	const dispatch = createEventDispatcher();
 
+	function shuffle(list) {
+  		return list.sort(() => Math.random() - 0.5);
+	}
+
+
 	function nextChunks(sequences) {
-		return C.getFirstSymbols(sequences.map(l => l.sequence));
+		const chunks = C.getFirstSymbols(sequences.map(l => l.sequence));
+		return shuffle(chunks);
 	}
 
 	function next(sequences) {

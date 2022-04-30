@@ -8,7 +8,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        entryFileNames: 'assets/interactive.js',
+        entryFileNames: 'assets/interactive-2.js',
       },
     },
   },
