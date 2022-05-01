@@ -3,6 +3,12 @@
     let linkMonth = "https://www.copecart.com/products/0c601627/checkout";
     let linkYear = "https://www.copecart.com/products/4e65fa91/checkout";
     import Message from "./Message.svelte";
+    import { onMount } from 'svelte';
+
+    let lern = window.lern;
+
+    onMount(() => lern.sendPaywallViewGoal("Quiz"));
+
 </script>
 
 <div class="quiz-controls">
@@ -29,7 +35,7 @@
         <div class="flex two">
             <div>
 
-                <a class="paywall-tier box-link" href={linkMonth}>
+                <a class="paywall-tier box-link" target="_blank" href={linkMonth} on:click={() => lern.sendPaywallClickGoal("Quiz", "1 Month")}>
                     <div class="card clickable v1">
                         <div class="period">1 Monat</div>
                         <div class="price">5 Euro</div>
@@ -38,7 +44,7 @@
             </div>
             <div>
 
-                <a class="paywall-tier box-link" href={linkYear}>
+                <a class="paywall-tier box-link" target="_blank" href={linkYear} on:click={() => lern.sendPaywallClickGoal("Quiz", "1 Year")}>
                     <div class="card clickable selected v1">
                         <div class="discount">- 60 %</div>
                         <div class="period">1 Jahr</div>
@@ -49,7 +55,7 @@
             </div>
         </div>
     </div>
-    <div class="footer"><a class="button yes" href={linkYear}>Ja, ich will</a></div>
+    <div class="footer"><a class="button yes" target="_blank" href={linkYear} on:click={() => lern.sendPaywallClickGoal("Quiz", "1 Year")}>Ja, ich will</a></div>
 
 </div>
 
